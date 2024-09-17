@@ -28,6 +28,10 @@ public class Event {
 
     private String coverImageUrl;
 
+    private int likes;  // 좋아요 수
+
+    private int ticketsLeft;  // 남은 티켓 수
+
     @Enumerated(EnumType.STRING)
     private EventType type;  // 이벤트 유형 (워크숍, 콘서트, 모임 등)
 }
