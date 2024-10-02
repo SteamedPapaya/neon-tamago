@@ -16,7 +16,7 @@ spring:
     cors:
       mappings:
         - path: "/**"
-          allowed-origins: ${FRONTEND_ORIGIN}
+          allowed-origins: "https://neon7.site"
           allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
   sql:
     init:
