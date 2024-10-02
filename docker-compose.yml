@@ -5,7 +5,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_PASSWORD}"  # EC2의 환경 변수를 직접 참조
       MYSQL_DATABASE: "${MYSQL_DATABASE}"
-      MYSQL_USER: "${MYSQL_USERNAME}"
     ports:
       - "3306:3306"
     volumes:
