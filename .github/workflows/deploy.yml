@@ -25,14 +25,16 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build
 
-      # Docker Compose 파일을 EC2로 전송
-      - name: Copy Docker Compose to EC2
+      # Docker Compose 파일과 Dockerfile을 EC2로 전송
+      - name: Copy Docker Compose and Dockerfile to EC2
         uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "docker-compose.yml"
+          source: |
+            docker-compose.yml
+            Dockerfile
           target: "~/spring-app/"
 
       # SSH로 EC2에 접속하여 Docker Compose 실행
