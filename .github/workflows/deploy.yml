@@ -33,8 +33,8 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           source: |
-            docker-compose.yml
-            Dockerfile
+            ./docker-compose.yml  # 상대 경로로 파일 위치 지정
+            ./Dockerfile           # Dockerfile의 경로 지정
           target: "~/spring-app/"
 
       # SSH로 EC2에 접속하여 Docker Compose 실행
