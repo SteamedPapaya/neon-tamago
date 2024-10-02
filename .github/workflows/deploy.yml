@@ -51,7 +51,7 @@ jobs:
           source: "docker-compose.yml"
           target: "~/spring-app/"
 
-      # SSH로 EC2에 접속하여 Docker Compose 실행
+      # SSH로 EC2에 접속하여 Docker Compose 실행 및 libxcrypt 패키지 설치
       - name: SSH and deploy with Docker Compose
         uses: appleboy/ssh-action@v0.1.5  # 최신 버전 사용
         with:
@@ -60,7 +60,8 @@ jobs:
           key: ${{ secrets.EC2_KEY }}  # SSH 프라이빗 키
           port: 22
           script: |
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -t ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            ssh -o StrictHostKeyChecking=no -tt ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+              # Docker Compose로 애플리케이션 재실행
               cd ~/spring-app/
               export MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
               export MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
