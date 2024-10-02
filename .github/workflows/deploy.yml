@@ -35,9 +35,9 @@ jobs:
 
       - name: Upload Docker Compose and application files to EC2
         run: |
-          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
-          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} target/neon-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_KEY }} docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_KEY }} target/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
 
       - name: Run Docker Compose on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ec2-user@${{ secrets.EC2_HOST }} "cd /home/ec2-user && docker-compose down && docker-compose up -d"
+          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_KEY }} ec2-user@${{ secrets.EC2_HOST }} "cd /home/ec2-user && docker-compose down && docker-compose up -d"
