@@ -35,6 +35,8 @@ public class EventService {
             event.setLocation(eventDetails.getLocation());
             event.setCoverImageUrl(eventDetails.getCoverImageUrl());
             event.setType(eventDetails.getType());
+            event.setLikes(eventDetails.getLikes());
+            event.setTicketsLeft(eventDetails.getTicketsLeft());
             return eventRepository.save(event);
         });
     }
