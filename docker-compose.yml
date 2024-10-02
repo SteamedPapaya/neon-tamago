@@ -16,11 +16,10 @@ services:
   app:
     build:
       context: .
+      dockerfile: Dockerfile  # Dockerfile 경로를 명확히 설정
     container_name: spring-app
-    environment:
-      MYSQL_DATASOURCE_URL: ${MYSQL_DATASOURCE_URL}
-      MYSQL_USERNAME: ${MYSQL_USERNAME}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    env_file:
+      - .env  # .env 파일을 통해 환경 변수를 로드
     ports:
       - "8080:8080"
     depends_on:
