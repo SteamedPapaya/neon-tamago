@@ -1,36 +1,27 @@
 services:
-  db:
+  app:
+    image: tamago:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tamago
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 375632
+    depends_on:
+      - mysql
+
+  mysql:
     image: mysql:8.0
-    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: 375632
       MYSQL_DATABASE: tamago
     ports:
       - "3306:3306"
     volumes:
-      - db_data:/var/lib/mysql
-    networks:
-      - app-network
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: spring-app
-    environment:
-      MYSQL_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/tamago?useSSL=false&serverTimezone=UTC
-      MYSQL_USERNAME: root
-      MYSQL_PASSWORD: 375632
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    networks:
-      - app-network
-    entrypoint: ["sh", "-c", "sleep 10 && java -jar app.jar"]
-
-networks:
-  app-network:
+      - mysql-data:/var/lib/mysql
 
 volumes:
-  db_data:
+  mysql-data:
