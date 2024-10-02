@@ -63,10 +63,11 @@ jobs:
             ssh -o StrictHostKeyChecking=no -tt ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
               # Docker Compose로 애플리케이션 재실행
               cd ~/spring-app/
-              export MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-              export MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-              export MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }}
               docker-compose down
+              MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+              MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
+              MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }} \
+              MYSQL_DATASOURCE_URL=${{ secrets.MYSQL_DATASOURCE_URL }} \
               docker-compose up -d --build
             EOF
           debug: true  # 디버그 모드 활성화
