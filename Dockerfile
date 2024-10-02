@@ -5,7 +5,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Copy the JAR file into the container
-COPY build/libs/tamago-0.0.1-SNAPSHOT.jar .
+COPY tamago-0.0.1-SNAPSHOT.jar .
 
 # Expose the application port
 EXPOSE 8080
