@@ -57,14 +57,10 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
+          key: ${{ secrets.EC2_KEY }}  # SSH 프라이빗 키
+          port: 22
           script: |
-            # SSH 연결 시 StrictHostKeyChecking 비활성화
-            mkdir -p ~/.ssh
-            echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            ssh-add ~/.ssh/id_rsa
-            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -t ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
               cd ~/spring-app/
               export MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
               export MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
