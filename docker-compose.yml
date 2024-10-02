@@ -18,7 +18,7 @@ services:
       dockerfile: Dockerfile
     container_name: spring-app
     environment:
-      MYSQL_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/tamago?useSSL=false&serverTimezone=UTC
+      MYSQL_DATASOURCE_URL: jdbc:mysql://mysql:3306/tamago?useSSL=false&serverTimezone=UTC
       MYSQL_USERNAME: root
       MYSQL_PASSWORD: 375632
     ports:
@@ -27,6 +27,7 @@ services:
       - db
     networks:
       - app-network
+    entrypoint: ["sh", "-c", "sleep 10 && java -jar app.jar"]
 
 networks:
   app-network:
