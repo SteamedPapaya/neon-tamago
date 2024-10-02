@@ -43,7 +43,7 @@ jobs:
 
       # Docker Compose 파일을 EC2로 전송
       - name: Copy Docker Compose to EC2
-        uses: appleboy/scp-action@v0.1.3
+        uses: appleboy/scp-action@v0.1.5  # 최신 버전 사용
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
@@ -51,17 +51,25 @@ jobs:
           source: "docker-compose.yml"
           target: "~/spring-app/"
 
-      # EC2에서 Docker Compose로 앱 실행
+      # SSH로 EC2에 접속하여 Docker Compose 실행
       - name: SSH and deploy with Docker Compose
-        uses: appleboy/ssh-action@v0.1.3
+        uses: appleboy/ssh-action@v0.1.5  # 최신 버전 사용
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd ~/spring-app/
-            export MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            export MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-            export MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }}
-            docker-compose down
-            docker-compose up -d --build
+            # SSH 연결 시 StrictHostKeyChecking 비활성화
+            mkdir -p ~/.ssh
+            echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-add ~/.ssh/id_rsa
+            ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+              cd ~/spring-app/
+              export MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+              export MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+              export MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }}
+              docker-compose down
+              docker-compose up -d --build
+            EOF
+          debug: true  # 디버그 모드 활성화
