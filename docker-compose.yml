@@ -18,9 +18,9 @@ services:
       dockerfile: Dockerfile
     container_name: spring-app
     environment:
-      MYSQL_DATASOURCE_URL: "${MYSQL_DATASOURCE_URL}"  # EC2의 환경 변수를 직접 참조
-      MYSQL_USERNAME: "${MYSQL_USERNAME}"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      MYSQL_DATASOURCE_URL: "jdbc:mysql://mysql:3306/tamago?useSSL=false&serverTimezone=UTC"
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: 375632
     ports:
       - "8080:8080"
     depends_on:
