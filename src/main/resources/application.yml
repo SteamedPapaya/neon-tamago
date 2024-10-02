@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${MYSQL_DATASOURCE_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    defer-datasource-initialization: true
+  mvc:
+    cors:
+      mappings:
+        - path: "/**"
+          allowed-origins: ${FRONTEND_ORIGIN}
+          allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  sql:
+    init:
+      mode: always
+      platform: mysql
