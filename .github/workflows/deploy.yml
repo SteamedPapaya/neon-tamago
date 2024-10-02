@@ -14,23 +14,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # JDK 17 설정
-      - name: Set up JDK 17
-        uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
       # Gradle 빌드
       - name: Build with Gradle
         run: ./gradlew clean build
 
-      # 디버깅: 현재 디렉토리의 파일 목록 출력
-      - name: List files for debugging
-        run: ls -al
-
-      # Docker Compose 파일과 Dockerfile을 EC2로 전송
-      - name: Copy Docker Compose and Dockerfile to EC2
+      # Docker Compose와 Dockerfile을 EC2로 전송
+      - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.5
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -40,9 +29,8 @@ jobs:
             docker-compose.yml
             Dockerfile
           target: "~/spring-app/"
-          strip_components: 0  # 이 옵션은 경로 문제를 해결하는 데 중요합니다.
 
-      # SSH로 EC2에 접속하여 Docker Compose 실행
+      # EC2에 SSH 접속하여 Docker Compose 실행
       - name: SSH and deploy with Docker Compose
         uses: appleboy/ssh-action@v0.1.5
         with:
@@ -50,7 +38,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            source ~/.bash_profile
             cd ~/spring-app/
             docker-compose down
             docker-compose up -d --build
