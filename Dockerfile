@@ -1,14 +1,24 @@
 # Base image with JDK 17
 FROM openjdk:17-jdk-slim
 
-# Set working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the build output (JAR file) from the host to the container
-COPY app.jar app.jar
+# Copy the build.gradle and gradle wrapper files
+COPY build.gradle gradlew ./
+COPY gradle ./gradle
 
-# Expose the port on which the Spring app will run
+# Download dependencies
+RUN ./gradlew build -x test --no-daemon
+
+# Copy the Spring app code
+COPY . .
+
+# Package the application
+RUN ./gradlew bootJar --no-daemon
+
+# Expose the application port
 EXPOSE 8080
 
-# Command to run the Spring Boot application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the Spring app
+ENTRYPOINT ["java", "-jar", "build/libs/tamago-0.0.1-SNAPSHOT.jar"]
