@@ -1,14 +1,12 @@
-# Base image with JDK 17
+# 베이스 이미지로 OpenJDK 17 사용
 FROM openjdk:17-jdk-slim
 
-# Set the working directory inside the container
+# 애플리케이션 JAR 파일을 컨테이너의 /app 디렉토리에 복사
 WORKDIR /app
+COPY build/libs/tamago-0.0.1-SNAPSHOT.jar app.jar
 
-# Copy the JAR file into the container
-COPY tamago-0.0.1-SNAPSHOT.jar .
-
-# Expose the application port
+# 애플리케이션 포트 8080 노출
 EXPOSE 8080
 
-# Run the Spring app
-ENTRYPOINT ["java", "-jar", "tamago-0.0.1-SNAPSHOT.jar"]
+# 애플리케이션 실행 명령
+ENTRYPOINT ["java", "-jar", "app.jar"]
