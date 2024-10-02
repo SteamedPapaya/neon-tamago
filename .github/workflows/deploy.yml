@@ -44,14 +44,14 @@ jobs:
       # Dockerfile, docker-compose.yml, JAR 파일을 EC2로 전송
       - name: Upload Files to EC2
         run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem Dockerfile ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem build/libs/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem Dockerfile ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem build/libs/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
 
       # EC2에서 Docker Compose 빌드 및 실행
       - name: Deploy on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             cd /home/ec2-user
             docker-compose down
             docker-compose build
