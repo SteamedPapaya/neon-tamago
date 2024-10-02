@@ -21,38 +21,52 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Gradle 빌드
+      # 3. Gradle 캐시 설정
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}
+
+      # 4. Gradle 빌드
       - name: Build with Gradle
         run: ./gradlew bootJar
 
-      # 4. Docker 이미지 빌드
+      # 5. Docker 이미지 빌드
       - name: Build Docker image
         run: docker build -t tamago:latest .
 
-      # 5. SSH 키 설정
+      # 6. Docker 이미지 저장 (tar 파일로)
+      - name: Save Docker image to tar
+        run: docker save tamago:latest -o tamago.tar
+
+      # 7. SSH 키 설정
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      # 6. Docker 이미지 tar 파일을 EC2로 전송
+      # 8. Docker 이미지 tar 파일을 EC2로 전송
       - name: Copy Docker image to EC2
         run: |
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa tamago.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
 
-      # 7. EC2에서 Docker 이미지 로드 및 컨테이너 실행
+      # 9. EC2에서 Docker 이미지 로드 및 컨테이너 실행
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            # Docker 네트워크가 없으면 생성
-            docker network ls | grep tamago-network || docker network create tamago-network
+            # Docker 이미지 로드
+            docker load -i /home/${{ secrets.EC2_USER }}/tamago.tar
 
             # 기존 애플리케이션 컨테이너 중지 및 제거
             docker stop tamago-app || true
             docker rm tamago-app || true
 
             # 새로운 애플리케이션 컨테이너 실행
+            docker load -i /home/${{ secrets.EC2_USER }}/tamago.tar
             docker run -d \
               --name tamago-app \
               --network tamago-network \
