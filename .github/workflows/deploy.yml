@@ -23,7 +23,7 @@ jobs:
 
       # Gradle 빌드 (JAR 파일 생성)
       - name: Build with Gradle
-        run: ./gradlew clean build
+        run: ./gradlew clean bootJar
 
       # SSH 키를 임시 파일로 저장
       - name: Set up SSH key
@@ -34,7 +34,7 @@ jobs:
       # 빌드된 JAR 파일과 Docker Compose 파일을 EC2로 전송
       - name: Copy files to EC2
         run: |
-          scp -i ~/ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar docker-compose.yml Dockerfile ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/spring-app/
+          scp -i ~/ec2_key.pem -o StrictHostKeyChecking=no build/libs/app.jar docker-compose.yml Dockerfile ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/spring-app/
 
       # EC2에 SSH 접속하여 Docker Compose 실행
       - name: SSH and deploy with Docker Compose
