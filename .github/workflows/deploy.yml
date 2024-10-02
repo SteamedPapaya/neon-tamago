@@ -21,7 +21,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Gradle 빌드
+      # Gradle 빌드 (JAR 파일 생성)
       - name: Build with Gradle
         run: ./gradlew clean build
 
@@ -31,10 +31,10 @@ jobs:
           echo "${{ secrets.EC2_KEY }}" > ~/ec2_key.pem
           chmod 600 ~/ec2_key.pem
 
-      # Docker Compose 파일과 Dockerfile을 EC2로 전송 (scp 사용)
+      # 빌드된 JAR 파일과 Docker Compose 파일을 EC2로 전송
       - name: Copy files to EC2
         run: |
-          scp -i ~/ec2_key.pem -o StrictHostKeyChecking=no docker-compose.yml Dockerfile ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/spring-app/
+          scp -i ~/ec2_key.pem -o StrictHostKeyChecking=no build/libs/*.jar docker-compose.yml Dockerfile ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/spring-app/
 
       # EC2에 SSH 접속하여 Docker Compose 실행
       - name: SSH and deploy with Docker Compose

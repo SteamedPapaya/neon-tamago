@@ -1,14 +1,14 @@
-# Base image
+# Base image with JDK 17
 FROM openjdk:17-jdk-slim
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy the build output from Gradle
-COPY build/libs/*.jar app.jar
+# Copy the build output (JAR file) from the host to the container
+COPY app.jar app.jar
 
-# Expose the port that the Spring app will run on
+# Expose the port on which the Spring app will run
 EXPOSE 8080
 
-# Run the Spring Boot application
+# Command to run the Spring Boot application
 ENTRYPOINT ["java", "-jar", "app.jar"]
