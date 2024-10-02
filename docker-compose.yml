@@ -3,8 +3,8 @@ services:
     image: mysql:8.0
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_PASSWORD}"  # EC2의 환경 변수를 직접 참조
-      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_ROOT_PASSWORD: 375632
+      MYSQL_DATABASE: tamago
     ports:
       - "3306:3306"
     volumes:
@@ -18,7 +18,7 @@ services:
       dockerfile: Dockerfile
     container_name: spring-app
     environment:
-      MYSQL_DATASOURCE_URL: "jdbc:mysql://host.docker.internal:3306/tamago?useSSL=false&serverTimezone=UTC"
+      MYSQL_DATASOURCE_URL: jdbc:mysql://localhost:3306/tamago?useSSL=false&serverTimezone=UTC
       MYSQL_USERNAME: root
       MYSQL_PASSWORD: 375632
     ports:
