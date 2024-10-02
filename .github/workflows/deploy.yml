@@ -10,15 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # JDK 17 설정
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # Gradle 캐시 설정
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -27,17 +30,28 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}
 
+      # Gradle 빌드
       - name: Build with Gradle
         run: ./gradlew bootJar
 
+      # Docker 이미지 빌드
       - name: Build Docker image
-        run: docker build -t neon-app:latest .
+        run: docker build -t neon-tamago:latest .
 
+      # SSH 키 설정
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2_key.pem
+          chmod 600 ~/.ssh/ec2_key.pem
+
+      # Docker Compose와 JAR 파일을 EC2로 전송
       - name: Upload Docker Compose and application files to EC2
         run: |
-          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_KEY }} docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
-          scp -o StrictHostKeyChecking=no -i ${{ secrets.EC2_KEY }} target/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem target/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
 
+      # EC2에서 Docker Compose 실행
       - name: Run Docker Compose on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_KEY }} ec2-user@${{ secrets.EC2_HOST }} "cd /home/ec2-user && docker-compose down && docker-compose up -d"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ec2-user@${{ secrets.EC2_HOST }} "cd /home/ec2-user && docker-compose down && docker-compose up -d"
