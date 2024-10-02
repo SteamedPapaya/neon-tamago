@@ -9,6 +9,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create
+      dialect: org.hibernate.dialect.MySQL8Dialect
     show-sql: true
     defer-datasource-initialization: true
   mvc:
