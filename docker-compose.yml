@@ -1,6 +1,7 @@
 services:
   app:
     image: tamago:latest
+    container_name: spring-app
     build:
       context: .
       dockerfile: Dockerfile
@@ -15,6 +16,7 @@ services:
 
   mysql:
     image: mysql:8.0
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: 375632
       MYSQL_DATABASE: tamago
