@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -34,10 +34,6 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew bootJar
 
-      # Docker 이미지 빌드
-      - name: Build Docker image
-        run: docker build -t neon-tamago:latest .
-
       # SSH 키 설정
       - name: Set up SSH key
         run: |
@@ -45,14 +41,19 @@ jobs:
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2_key.pem
           chmod 600 ~/.ssh/ec2_key.pem
 
-      # Docker Compose와 JAR 파일을 EC2로 전송
-      - name: Upload Docker Compose and application files to EC2
+      # Dockerfile, docker-compose.yml, JAR 파일을 EC2로 전송
+      - name: Upload Files to EC2
         run: |
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem Dockerfile ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
           scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
-          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem build/libs/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem build/libs/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
 
-
-      # EC2에서 Docker Compose 실행
-      - name: Run Docker Compose on EC2
+      # EC2에서 Docker Compose 빌드 및 실행
+      - name: Deploy on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ec2-user@${{ secrets.EC2_HOST }} "cd /home/ec2-user && docker-compose down && docker-compose up -d"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ec2-user
+            docker-compose down
+            docker-compose build
+            docker-compose up -d
+          EOF
