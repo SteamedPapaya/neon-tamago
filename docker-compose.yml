@@ -14,7 +14,8 @@ services:
       - app-network
 
   app:
-    build: .
+    build:
+      context: .
     container_name: spring-app
     environment:
       MYSQL_DATASOURCE_URL: ${MYSQL_DATASOURCE_URL}
