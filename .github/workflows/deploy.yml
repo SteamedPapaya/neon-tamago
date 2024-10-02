@@ -10,18 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 코드 체크아웃
+      # 1. 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # JDK 17 설정
+      # 2. JDK 17 설정
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Gradle 캐시 설정
+      # 3. Gradle 캐시 설정
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
@@ -30,30 +30,44 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}
 
-      # Gradle 빌드
+      # 4. Gradle 빌드
       - name: Build with Gradle
         run: ./gradlew bootJar
 
-      # SSH 키 설정
-      - name: Set up SSH key
+      # 5. Docker 이미지 빌드
+      - name: Build Docker image
+        run: docker build -t tamago:latest .
+
+      # 6. Docker 이미지 저장 (tar 파일로)
+      - name: Save Docker image to tar
+        run: docker save tamago:latest -o tamago.tar
+
+      # 7. Docker 이미지 tar 파일을 EC2로 전송
+      - name: Transfer Docker image to EC2
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/ec2_key.pem
-          chmod 600 ~/.ssh/ec2_key.pem
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-      # Dockerfile, docker-compose.yml, JAR 파일을 EC2로 전송
-      - name: Upload Files to EC2
-        run: |
-          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem Dockerfile ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
-          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
-          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem build/libs/tamago-0.0.1-SNAPSHOT.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa tamago.tar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/
 
-      # EC2에서 Docker Compose 빌드 및 실행
-      - name: Deploy on EC2
+      # 8. EC2에서 Docker 이미지 로드 및 컨테이너 실행
+      - name: Deploy to EC2
         run: |
-          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/ec2-user
-            docker-compose down
-            docker-compose build
-            docker-compose up -d
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            # Docker 이미지 로드
+            docker load -i /home/${{ secrets.EC2_USER }}/tamago.tar
+
+            # 기존 애플리케이션 컨테이너 중지 및 제거
+            docker stop tamago-app || true
+            docker rm tamago-app || true
+
+            # 새로운 애플리케이션 컨테이너 실행
+            docker run -d \
+              --name tamago-app \
+              -e SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/tamago?useSSL=false&serverTimezone=UTC \
+              -e SPRING_DATASOURCE_USERNAME=siyoon \
+              -e SPRING_DATASOURCE_PASSWORD=375632 \
+              -p 8080:8080 \
+              tamago:latest
           EOF
