@@ -28,6 +28,10 @@ public class Ticket {
 
     private Integer quantity;
 
+    private Long ownerId;
+
+    private boolean reserved = false;
+
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<EventTicket> eventTickets = new HashSet<>();
 
@@ -43,5 +47,11 @@ public class Ticket {
         event.getEventTickets().remove(eventTicket);
         eventTicket.setEvent(null);
         eventTicket.setTicket(null);
+    }
+
+    // 예약 메서드
+    public void reserve(Long userId) {
+        this.ownerId = userId;
+        this.reserved = true;
     }
 }
