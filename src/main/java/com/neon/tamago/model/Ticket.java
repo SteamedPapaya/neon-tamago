@@ -1,19 +1,24 @@
 package com.neon.tamago.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Ticket {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private String code;
 
     private String name;
 
@@ -23,7 +28,20 @@ public class Ticket {
 
     private Integer quantity;
 
-    @ManyToOne
-    @JoinColumn(name = "event_id")
-    private Event event;
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<EventTicket> eventTickets = new HashSet<>();
+
+    public void addEvent(Event event) {
+        EventTicket eventTicket = new EventTicket(event, this);
+        eventTickets.add(eventTicket);
+        event.getEventTickets().add(eventTicket);
+    }
+
+    public void removeEvent(Event event) {
+        EventTicket eventTicket = new EventTicket(event, this);
+        eventTickets.remove(eventTicket);
+        event.getEventTickets().remove(eventTicket);
+        eventTicket.setEvent(null);
+        eventTicket.setTicket(null);
+    }
 }
