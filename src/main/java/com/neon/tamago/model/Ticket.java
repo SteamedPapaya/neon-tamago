@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -20,38 +20,39 @@ public class Ticket {
 
     private String code;
 
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private TicketStatus status = TicketStatus.AVAILABLE;
 
-    private String description;
+    private Long userId; // 예매자 ID
 
-    private Double price;
+    private LocalDateTime reservedAt;
 
-    private Integer quantity;
+    private LocalDateTime usedAt;
 
-    private Long ownerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ticket_category_id", nullable = false)
+    private TicketCategory ticketCategory;
 
-    private boolean reserved = false;
-
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<EventTicket> eventTickets = new HashSet<>();
-
-    public void addEvent(Event event) {
-        EventTicket eventTicket = new EventTicket(event, this);
-        eventTickets.add(eventTicket);
-        event.getEventTickets().add(eventTicket);
+    // 생성자 및 메서드
+    public Ticket(TicketCategory ticketCategory) {
+        this.ticketCategory = ticketCategory;
+        this.code = UUID.randomUUID().toString();
     }
 
-    public void removeEvent(Event event) {
-        EventTicket eventTicket = new EventTicket(event, this);
-        eventTickets.remove(eventTicket);
-        event.getEventTickets().remove(eventTicket);
-        eventTicket.setEvent(null);
-        eventTicket.setTicket(null);
-    }
-
-    // 예약 메서드
     public void reserve(Long userId) {
-        this.ownerId = userId;
-        this.reserved = true;
+        this.userId = userId;
+        this.reservedAt = LocalDateTime.now();
+        this.status = TicketStatus.RESERVED;
+    }
+
+    public void use() {
+        this.usedAt = LocalDateTime.now();
+        this.status = TicketStatus.USED;
+    }
+
+    public void cancelReservation() {
+        this.userId = null;
+        this.reservedAt = null;
+        this.status = TicketStatus.AVAILABLE;
     }
 }

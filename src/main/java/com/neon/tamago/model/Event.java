@@ -21,37 +21,52 @@ public class Event {
 
     private String title;
 
-    private String description;
+    private String shortDescription;
 
-    private LocalDateTime startTime;
+    private String thumbnailImageUrl;
 
-    private LocalDateTime endTime;
+    @Lob
+    private String detailContent;
 
-    private String location;
+    private LocalDateTime salesStartTime;
 
-    private String coverImageUrl;
+    private LocalDateTime salesEndTime;
 
-    private int likes;  // 좋아요 수
+    private LocalDateTime eventStartTime;
 
-    private int ticketsLeft;  // 남은 티켓 수
-
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<EventTicket> eventTickets = new HashSet<>();
+    private LocalDateTime eventEndTime;
 
     @Enumerated(EnumType.STRING)
-    private EventType type;  // 이벤트 유형 (워크숍, 콘서트, 모임 등)
+    private EventType eventType;
 
-    public void addTicket(Ticket ticket) {
-        EventTicket eventTicket = new EventTicket(this, ticket);
-        eventTickets.add(eventTicket);
-        ticket.getEventTickets().add(eventTicket);
+    private Long creatorId; // 이벤트 생성자 ID (JWT에서 추출)
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TicketCategory> ticketCategories = new HashSet<>();
+
+    // 생성자 및 연관 관계 메서드
+    public Event(String title, String shortDescription, String thumbnailImageUrl, String detailContent,
+                 LocalDateTime salesStartTime, LocalDateTime salesEndTime, LocalDateTime eventStartTime,
+                 LocalDateTime eventEndTime, EventType eventType, Long creatorId) {
+        this.title = title;
+        this.shortDescription = shortDescription;
+        this.thumbnailImageUrl = thumbnailImageUrl;
+        this.detailContent = detailContent;
+        this.salesStartTime = salesStartTime;
+        this.salesEndTime = salesEndTime;
+        this.eventStartTime = eventStartTime;
+        this.eventEndTime = eventEndTime;
+        this.eventType = eventType;
+        this.creatorId = creatorId;
     }
 
-    public void removeTicket(Ticket ticket) {
-        EventTicket eventTicket = new EventTicket(this, ticket);
-        eventTickets.remove(eventTicket);
-        ticket.getEventTickets().remove(eventTicket);
-        eventTicket.setEvent(null);
-        eventTicket.setTicket(null);
+    public void addTicketCategory(TicketCategory ticketCategory) {
+        ticketCategories.add(ticketCategory);
+        ticketCategory.setEvent(this);
+    }
+
+    public void removeTicketCategory(TicketCategory ticketCategory) {
+        ticketCategories.remove(ticketCategory);
+        ticketCategory.setEvent(null);
     }
 }
