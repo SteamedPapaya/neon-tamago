@@ -21,8 +21,11 @@ public class TicketCategoryController {
         return ticketCategoryService.createTicketCategory(eventId, ticketCategory, userId);
     }
 
-    private Long getUserIdFromRequest(HttpServletRequest request) {
-        // JWT 토큰에서 userId 추출 로직 구현 (추후 구현 예정)
-        return 1L; // 임시로 1L 반환
+    private Long getUserIdFromRequest(HttpServletRequest request) throws UnauthorizedException {
+        String userIdHeader = request.getHeader("X-User-Id");
+        if (userIdHeader == null) {
+            throw new UnauthorizedException("User ID is missing in the request header");
+        }
+        return Long.parseLong(userIdHeader);
     }
 }
