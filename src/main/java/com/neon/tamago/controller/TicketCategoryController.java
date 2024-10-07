@@ -1,25 +1,24 @@
 package com.neon.tamago.controller;
 
-import com.neon.tamago.exception.SoldOutException;
 import com.neon.tamago.exception.UnauthorizedException;
-import com.neon.tamago.model.Ticket;
-import com.neon.tamago.service.TicketService;
+import com.neon.tamago.model.TicketCategory;
+import com.neon.tamago.service.TicketCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/api/tickets")
-public class TicketController {
+@RequestMapping("/api/events/{eventId}/ticket-categories")
+public class TicketCategoryController {
 
     @Autowired
-    private TicketService ticketService;
+    private TicketCategoryService ticketCategoryService;
 
-    @PostMapping("/reserve")
-    public Ticket reserveTicket(@RequestParam Long ticketCategoryId, HttpServletRequest request) throws SoldOutException, UnauthorizedException {
+    @PostMapping
+    public TicketCategory createTicketCategory(@PathVariable Long eventId, @RequestBody TicketCategory ticketCategory, HttpServletRequest request) throws UnauthorizedException {
         Long userId = getUserIdFromRequest(request);
-        return ticketService.reserveTicket(ticketCategoryId, userId);
+        return ticketCategoryService.createTicketCategory(eventId, ticketCategory, userId);
     }
 
     private Long getUserIdFromRequest(HttpServletRequest request) throws UnauthorizedException {
