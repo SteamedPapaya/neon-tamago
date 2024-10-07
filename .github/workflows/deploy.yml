@@ -70,6 +70,9 @@ jobs:
             docker run -d \
               --name tamago-app \
               --network tamago-network \
+              -e MYSQL_DATASOURCE_URL=${{ secrets.MYSQL_DATASOURCE_URL }} \
+              -e MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+              -e MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }} \
               -p 8080:8080 \
               tamago:latest
           EOF
