@@ -39,6 +39,9 @@ dependencies {
 
     // H2
     testImplementation 'com.h2database:h2:2.3.232'
+
+    // RabbitMQ
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
 }
 
 tasks.named('test') {

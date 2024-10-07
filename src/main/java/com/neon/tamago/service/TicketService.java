@@ -6,6 +6,7 @@ import com.neon.tamago.model.Ticket;
 import com.neon.tamago.model.TicketCategory;
 import com.neon.tamago.repository.TicketCategoryRepository;
 import com.neon.tamago.repository.TicketRepository;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,9 @@ public class TicketService {
 
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
+
+    @Autowired
+    private AmqpTemplate amqpTemplate;
 
     @Transactional
     public Ticket reserveTicket(Long ticketCategoryId, Long userId) throws SoldOutException {
@@ -38,6 +42,11 @@ public class TicketService {
         // 티켓 생성 및 예약
         Ticket ticket = new Ticket(ticketCategory);
         ticket.reserve(userId);
-        return ticketRepository.save(ticket);
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        // 메시지 전송
+        amqpTemplate.convertAndSend("ticket-reservation-queue", "Ticket reserved: " + savedTicket.getId());
+
+        return savedTicket;
     }
 }
