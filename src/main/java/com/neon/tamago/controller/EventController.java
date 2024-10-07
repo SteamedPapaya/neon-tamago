@@ -1,7 +1,9 @@
 package com.neon.tamago.controller;
 
+import com.neon.tamago.exception.UnauthorizedException;
 import com.neon.tamago.model.Event;
 import com.neon.tamago.service.EventService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,44 +11,37 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/events")
+@RequestMapping("/api/events")
 public class EventController {
 
     @Autowired
     private EventService eventService;
 
     @GetMapping
-    public ResponseEntity<List<Event>> getAllEvents() {
-        List<Event> events = eventService.getAllEvents();
-        return ResponseEntity.ok(events);
+    public List<Event> getOngoingEvents() {
+        return eventService.getOngoingEvents();
     }
 
-    @PostMapping
-    public ResponseEntity<Event> createEvent(@RequestBody Event event) {
-        Event createdEvent = eventService.saveEvent(event);
-        return ResponseEntity.ok(createdEvent);
+    @GetMapping("/{eventId}")
+    public Event getEvent(@PathVariable Long eventId) {
+        return eventService.getEventById(eventId);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
-        return eventService.getEventById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping("/{eventId}")
+    public Event updateEvent(@PathVariable Long eventId, @RequestBody Event eventDetails, HttpServletRequest request) throws UnauthorizedException {
+        Long userId = getUserIdFromRequest(request);
+        return eventService.updateEvent(eventId, eventDetails, userId);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Event> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
-        return eventService.updateEvent(id, eventDetails)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @DeleteMapping("/{eventId}")
+    public ResponseEntity<?> deleteEvent(@PathVariable Long eventId, HttpServletRequest request) throws UnauthorizedException {
+        Long userId = getUserIdFromRequest(request);
+        eventService.deleteEvent(eventId, userId);
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
-        if (eventService.deleteEvent(id)) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    private Long getUserIdFromRequest(HttpServletRequest request) {
+        // JWT 토큰에서 userId 추출 로직 구현 (추후 구현 예정)
+        return 1L; // 임시로 1L 반환
     }
 }
