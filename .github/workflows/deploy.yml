@@ -63,21 +63,11 @@ jobs:
             docker stop tamago-app || true
             docker rm tamago-app || true
 
-            export MYSQL_DATASOURCE_URL="${{ secrets.MYSQL_DATASOURCE_URL }}"
-            export MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD }}"
-            export MYSQL_USERNAME="${{ secrets.MYSQL_USERNAME }}"
-            echo "MYSQL_DATASOURCE_URL: ${MYSQL_DATASOURCE_URL}"
-            echo "MYSQL_USERNAME: ${MYSQL_USERNAME}"
-            echo "MYSQL_PASSWORD: ${MYSQL_PASSWORD}"
-
             # 새로운 애플리케이션 컨테이너 실행
             docker load -i /home/${{ secrets.EC2_USER }}/tamago.tar
             docker run -d \
               --name tamago-app \
               --network tamago-network \
-#              -e MYSQL_DATASOURCE_URL=${MYSQL_DATASOURCE_URL} \
-#              -e MYSQL_PASSWORD=${MYSQL_USERNAME} \
-#              -e MYSQL_USERNAME=${MYSQL_PASSWORD} \
               -p 8080:8080 \
               tamago:latest
           EOF
