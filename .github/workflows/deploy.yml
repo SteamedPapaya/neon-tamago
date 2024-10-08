@@ -58,9 +58,7 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            # Docker 이미지 로드
-            docker load -i /home/${{ secrets.EC2_USER }}/tamago.tar
-
+          
             # 기존 애플리케이션 컨테이너 중지 및 제거
             docker stop tamago-app || true
             docker rm tamago-app || true
@@ -70,9 +68,9 @@ jobs:
             docker run -d \
               --name tamago-app \
               --network tamago-network \
-              -e MYSQL_DATASOURCE_URL=${{ secrets.MYSQL_DATASOURCE_URL }} \
-              -e MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
-              -e MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }} \
+              -e MYSQL_DATASOURCE_URL="${{ secrets.MYSQL_DATASOURCE_URL }}" \
+              -e MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD }}" \
+              -e MYSQL_USERNAME="${{ secrets.MYSQL_USERNAME }}" \
               -p 8080:8080 \
               tamago:latest
           EOF
