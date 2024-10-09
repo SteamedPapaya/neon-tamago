@@ -79,6 +79,50 @@ public class TicketService {
         }
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void processTicketReservation(TicketReservationRequest request) throws Exception, SoldOutException {
+        Long ticketCategoryId = request.getTicketCategoryId();
+        Long userId = request.getUserId();
+
+        // 남은 티켓 수 확인 및 원자적 감소
+        String stockKey = "stock:ticketCategory:" + ticketCategoryId;
+        RAtomicLong stock = redissonClient.getAtomicLong(stockKey);
+
+        long currentStock = stock.get();
+        if (currentStock <= 0) {
+            // 대기열에 사용자 추가
+            addToWaitList(ticketCategoryId, userId);
+            log.info("All tickets sold out, user {} added to the waiting list.", userId);
+            return;
+        }
+
+        long updatedStock = stock.decrementAndGet();
+        if (updatedStock < 0) {
+            // 재고 부족
+            stock.incrementAndGet();
+            throw new SoldOutException("No tickets available");
+        }
+
+        // 데이터베이스에 티켓 예약 정보 저장
+        TicketCategory ticketCategory = ticketCategoryRepository.findById(ticketCategoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket category not found"));
+
+        Ticket ticket = new Ticket(ticketCategory);
+        ticket.reserve(userId);
+        ticketRepository.save(ticket);
+
+        // 남은 티켓 수 감소 (데이터베이스)
+        ticketCategoryRepository.decreaseRemainingQuantity(ticketCategoryId);
+
+        log.info("User {} reserved ticket for category {}", userId, ticketCategoryId);
+    }
+
+    public void addToWaitList(Long ticketCategoryId, Long userId) {
+        String queueKey = "queue:reservation:" + ticketCategoryId;
+        RQueue<Long> queue = redissonClient.getQueue(queueKey);
+        queue.add(userId);
+    }
+
     public void processWaitingList(Long ticketCategoryId) {
         String queueKey = "queue:reservation:" + ticketCategoryId;
         RQueue<Long> queue = redissonClient.getQueue(queueKey);
@@ -89,18 +133,11 @@ public class TicketService {
         while (stock.get() > 0 && !queue.isEmpty()) {
             Long userId = queue.poll();
             if (userId != null) {
-                // 원자적으로 남은 수량 감소
                 long updatedStock = stock.decrementAndGet();
                 if (updatedStock >= 0) {
-                    // 예약 요청 DTO 생성
                     TicketReservationRequest reservationRequest = new TicketReservationRequest(ticketCategoryId, userId);
-
-                    // 메시지 큐에 예약 요청 전송
                     rabbitTemplate.convertAndSend("ticket-reservation-queue", reservationRequest);
-
-                    // 사용자에게 알림을 보낼 수 있습니다 (예: 이메일, 푸시 알림 등)
                 } else {
-                    // 수량 감소 실패 시 다시 증가시키고 루프 종료
                     stock.incrementAndGet();
                     break;
                 }

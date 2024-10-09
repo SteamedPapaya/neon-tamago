@@ -1,5 +1,6 @@
 package com.neon.tamago.service;
 
+import com.neon.tamago.integration.AbstractIntegrationTest;
 import com.neon.tamago.model.Event;
 import com.neon.tamago.model.EventType;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-class EventServiceTest {
+class EventServiceTest extends AbstractIntegrationTest {
 
     @Autowired
     private EventService eventService;

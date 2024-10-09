@@ -2,14 +2,12 @@ package com.neon.tamago.controller;
 
 import com.neon.tamago.dto.TicketReservationRequest;
 import com.neon.tamago.exception.UnauthorizedException;
+import com.neon.tamago.service.TicketService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RAtomicLong;
-import org.redisson.api.RLock;
-import org.redisson.api.RQueue;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.redisson.client.RedisConnectionException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -30,11 +28,13 @@ public class TicketController {
     private final RedissonClient redissonClient;
 
     @Autowired
+    private TicketService ticketService;
+
+    @Autowired
     private Jackson2JsonMessageConverter messageConverter;
 
     @PostConstruct
     public void init() {
-        // 메시지 컨버터 설정
         rabbitTemplate.setMessageConverter(messageConverter);
     }
 
@@ -42,60 +42,36 @@ public class TicketController {
     public ResponseEntity<String> reserveTicket(@RequestParam Long ticketCategoryId, HttpServletRequest request) throws UnauthorizedException {
         Long userId = getUserIdFromRequest(request);
 
-        // 분산 락 키 생성
-        String lockKey = "lock:reservation:" + userId + ":" + ticketCategoryId;
-
-        RLock lock = redissonClient.getLock(lockKey);
-        boolean isLocked = false;
         try {
-            isLocked = lock.tryLock(0, 10, TimeUnit.SECONDS);
-            if (!isLocked) {
-                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Duplicate reservation request");
+            // 사용자 Rate Limiter 설정 (Redis 기반)
+            String rateLimiterKey = "rateLimiter:reservation:" + userId;
+            RRateLimiter rateLimiter = redissonClient.getRateLimiter(rateLimiterKey);
+            rateLimiter.trySetRate(RateType.OVERALL, 1L, 10L, RateIntervalUnit.SECONDS);
+
+            // Rate Limiting 초과 시 처리
+            if (!rateLimiter.tryAcquire()) {
+                log.info("Rate limit exceeded for User {}", userId);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too many requests, please try again later.");
             }
 
-            // 남은 티켓 수 확인 및 원자적 감소
-            String stockKey = "stock:ticketCategory:" + ticketCategoryId;
-            RAtomicLong stock = redissonClient.getAtomicLong(stockKey);
+            // Redis 다운 여부를 먼저 체크 (여기서 RedisConnectionException 처리)
+            String userSetKey = "ticket:reservation:users:" + ticketCategoryId;
+            RSet<Long> userSet = redissonClient.getSet(userSetKey);
 
-            long currentStock = stock.get();
-            if (currentStock <= 0) {
-                // 남은 티켓이 없으므로 대기열에 추가
-                String queueKey = "queue:reservation:" + ticketCategoryId;
-                RQueue<Long> queue = redissonClient.getQueue(queueKey);
-                queue.add(userId);
-
-                return ResponseEntity.ok("All tickets are sold out. You have been added to the waiting list.");
+            // 사용자 요청 중복 여부 확인
+            if (!userSet.add(userId)) {
+                log.info("User {} already has a pending request for ticket category {}", userId, ticketCategoryId);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You have already made a reservation request for this ticket category.");
             }
 
-            // 원자적으로 남은 수량 감소
-            long updatedStock = stock.decrementAndGet();
-            if (updatedStock < 0) {
-                // 재고 부족, 감소 취소 및 대기열에 추가
-                stock.incrementAndGet();
-
-                String queueKey = "queue:reservation:" + ticketCategoryId;
-                RQueue<Long> queue = redissonClient.getQueue(queueKey);
-                queue.add(userId);
-
-                return ResponseEntity.ok("All tickets are sold out. You have been added to the waiting list.");
-            }
-
-            // 예약 요청 DTO 생성
+            // 비동기 메시지 큐로 예약 요청 전송
             TicketReservationRequest reservationRequest = new TicketReservationRequest(ticketCategoryId, userId);
-
-            // 메시지 큐에 예약 요청 전송
             rabbitTemplate.convertAndSend("ticket-reservation-queue", reservationRequest);
 
-            return ResponseEntity.ok("Reservation request received");
+            return ResponseEntity.ok("Reservation request received and is being processed.");
         } catch (RedisConnectionException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Reservation request failed");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Reservation request failed");
-        } finally {
-            if (isLocked) {
-                lock.unlock();
-            }
+            log.error("Redis is down", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Reservation request failed due to Redis issue");
         }
     }
 
