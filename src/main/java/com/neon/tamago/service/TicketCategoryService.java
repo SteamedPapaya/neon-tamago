@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class TicketCategoryService {
 
@@ -29,4 +31,8 @@ public class TicketCategoryService {
     }
 
     // 필요 시 수정 및 삭제 메서드 추가
+
+    public List<TicketCategory> findAll() {
+        return ticketCategoryRepository.findAll();
+    }
 }

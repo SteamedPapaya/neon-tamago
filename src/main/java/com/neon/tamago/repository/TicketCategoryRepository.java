@@ -23,4 +23,9 @@ public interface TicketCategoryRepository extends JpaRepository<TicketCategory, 
     @Transactional
     @Query("UPDATE TicketCategory t SET t.remainingQuantity = t.remainingQuantity - 1 WHERE t.id = :id AND t.remainingQuantity > 0")
     int decreaseRemainingQuantity(@Param("id") Long id);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE TicketCategory t SET t.remainingQuantity = t.remainingQuantity + 1 WHERE t.id = :id")
+    int increaseRemainingQuantity(@Param("id") Long id);
 }

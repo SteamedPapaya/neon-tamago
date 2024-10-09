@@ -29,6 +29,8 @@ public class Ticket {
 
     private LocalDateTime usedAt;
 
+    private LocalDateTime canceledAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_category_id", nullable = false)
     private TicketCategory ticketCategory;
@@ -53,6 +55,7 @@ public class Ticket {
     public void cancelReservation() {
         this.userId = null;
         this.reservedAt = null;
+        this.canceledAt = LocalDateTime.now();
         this.status = TicketStatus.AVAILABLE;
     }
 }

@@ -7,21 +7,28 @@ import com.neon.tamago.repository.TicketCategoryRepository;
 import com.neon.tamago.service.EventService;
 import com.neon.tamago.service.TicketCategoryService;
 import com.neon.tamago.service.TicketService;
+import org.redisson.api.RAtomicLong;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
+
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Autowired
     private EventService eventService;
 
     @Autowired
     private TicketCategoryService ticketCategoryService;
+
     @Autowired
     private TicketService ticketService;
 
@@ -117,5 +124,12 @@ public class DataInitializer implements CommandLineRunner {
             throw new RuntimeException(e);
         }
 
+        // 티켓 카테고리 목록을 가져와 Redis에 남은 수량을 초기화
+        List<TicketCategory> categories = ticketCategoryService.findAll();
+        for (TicketCategory category : categories) {
+            String stockKey = "stock:ticketCategory:" + category.getId();
+            RAtomicLong stock = redissonClient.getAtomicLong(stockKey);
+            stock.set(category.getRemainingQuantity());
+        }
     }
 }
