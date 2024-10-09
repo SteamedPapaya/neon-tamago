@@ -1,5 +1,6 @@
 package com.neon.tamago.service;
 
+import com.neon.tamago.integration.AbstractIntegrationTest;
 import com.neon.tamago.model.Event;
 import com.neon.tamago.model.TicketCategory;
 import com.neon.tamago.repository.EventRepository;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TicketServiceConcurrencyTest {
+public class TicketServiceConcurrencyTest extends AbstractIntegrationTest {
 
     @Autowired
     private TicketRepository ticketRepository;
