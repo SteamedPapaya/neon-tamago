@@ -215,5 +215,11 @@ gradle-app.setting
 
 # End of https://www.toptal.com/developers/gitignore/api/gradle,java,intellij+all,macos
 
+### Environment ###
+
 .env
 .env.local
+
+### Spring Boot Configuration ###
+
+application-local.yml
