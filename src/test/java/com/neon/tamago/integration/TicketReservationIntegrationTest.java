@@ -1,13 +1,13 @@
-package com.neon.tamago.service;
+package com.neon.tamago.integration;
 
 import com.neon.tamago.model.Event;
 import com.neon.tamago.model.TicketCategory;
 import com.neon.tamago.repository.EventRepository;
 import com.neon.tamago.repository.TicketCategoryRepository;
 import com.neon.tamago.repository.TicketRepository;
+import com.neon.tamago.service.TicketService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +20,7 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TicketServiceConcurrencyTest {
+public class TicketReservationIntegrationTest {
 
     @Autowired
     private TicketRepository ticketRepository;
@@ -67,7 +66,7 @@ public class TicketServiceConcurrencyTest {
     }
 
     @Test
-    public void reserveTicket_concurrent() throws InterruptedException {
+    public void testConcurrentReservations() throws InterruptedException {
         int numberOfThreads = 20;
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
         CountDownLatch latch = new CountDownLatch(numberOfThreads);
@@ -76,6 +75,7 @@ public class TicketServiceConcurrencyTest {
             final long userId = i;
             executorService.submit(() -> {
                 try {
+                    // 예약 요청 시뮬레이션
                     ticketService.reserveTicket(ticketCategoryId, userId);
                 } catch (Exception e) {
                     System.out.println("Exception: " + e.getMessage());
@@ -91,5 +91,12 @@ public class TicketServiceConcurrencyTest {
         // 예약된 티켓 수 확인
         long reservedTickets = ticketRepository.count();
         assertEquals(10, reservedTickets);
+
+        // 남은 티켓 수 확인
+        TicketCategory ticketCategory = ticketCategoryRepository.findById(ticketCategoryId).orElseThrow();
+        assertEquals(0, ticketCategory.getRemainingQuantity());
+
+        RAtomicLong stock = redissonClient.getAtomicLong("stock:ticketCategory:" + ticketCategoryId);
+        assertEquals(0, stock.get());
     }
 }

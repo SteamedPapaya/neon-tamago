@@ -7,6 +7,9 @@ import com.neon.tamago.model.Ticket;
 import com.neon.tamago.model.TicketCategory;
 import com.neon.tamago.repository.TicketCategoryRepository;
 import com.neon.tamago.repository.TicketRepository;
+import lombok.RequiredArgsConstructor;
+import org.redisson.api.RAtomicLong;
+import org.redisson.api.RedissonClient;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -15,16 +18,13 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class TicketReservationWorker {
 
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
-
-    public TicketReservationWorker(TicketRepository ticketRepository, TicketCategoryRepository ticketCategoryRepository) {
-        this.ticketRepository = ticketRepository;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-    }
+    private final RedissonClient redissonClient;
 
     @RabbitListener(queues = "ticket-reservation-queue", containerFactory = "batchFactory")
     public void receiveMessages(List<TicketReservationRequest> requests) {
@@ -50,9 +50,14 @@ public class TicketReservationWorker {
         TicketCategory ticketCategory = ticketCategoryRepository.findById(ticketCategoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket category not found"));
 
-        // 남은 티켓 수 검사 및 감소 (낙관적 업데이트)
+        // 남은 티켓 수 감소 (데이터베이스)
         int updateCount = ticketCategoryRepository.decreaseRemainingQuantity(ticketCategoryId);
         if (updateCount == 0) {
+            // 재고 부족 시 Redis의 남은 수량을 증가시킴
+            String stockKey = "stock:ticketCategory:" + ticketCategoryId;
+            RAtomicLong stock = redissonClient.getAtomicLong(stockKey);
+            stock.incrementAndGet();
+
             throw new SoldOutException("No tickets available");
         }
 
