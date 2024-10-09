@@ -1,5 +1,6 @@
 package com.neon.tamago.controller;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.neon.tamago.dto.TicketReservationRequest;
 import com.neon.tamago.exception.UnauthorizedException;
 import jakarta.annotation.PostConstruct;
@@ -16,8 +17,13 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -32,6 +38,9 @@ public class TicketController {
     @Autowired
     private Jackson2JsonMessageConverter messageConverter;
 
+    // 사용자별 RateLimiter를 저장하는 맵 (thread-safe)
+    private Map<Long, RateLimiter> userRateLimiters = new ConcurrentHashMap<>();
+
     @PostConstruct
     public void init() {
         // 메시지 컨버터 설정
@@ -42,6 +51,16 @@ public class TicketController {
     public ResponseEntity<String> reserveTicket(@RequestParam Long ticketCategoryId, HttpServletRequest request) throws UnauthorizedException {
         Long userId = getUserIdFromRequest(request);
 
+        // 사용자별 RateLimiter 생성 또는 가져오기 (10초에 1번 요청 허용)
+        userRateLimiters.putIfAbsent(userId, RateLimiter.create(0.1));  // 0.1 RPS -> 10초에 1번 요청 허용
+        RateLimiter rateLimiter = userRateLimiters.get(userId);
+
+        // 허용되지 않은 경우 (초과 요청)
+        if (!rateLimiter.tryAcquire()) {
+            log.info("Rate limit exceeded for User {}", userId);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too many requests, please try again later.");
+        }
+
         // 분산 락 키 생성
         String lockKey = "lock:reservation:" + userId + ":" + ticketCategoryId;
 
@@ -50,6 +69,7 @@ public class TicketController {
         try {
             isLocked = lock.tryLock(0, 10, TimeUnit.SECONDS);
             if (!isLocked) {
+                log.info("Duplicate reservation request for User {}", userId);
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Duplicate reservation request");
             }
 
