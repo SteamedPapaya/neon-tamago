@@ -128,4 +128,11 @@ public class TicketService {
         // 대기열 처리
         processWaitingList(ticketCategoryId);
     }
+
+    @Transactional(readOnly = true)
+    public long getRemainingTickets(Long ticketCategoryId) {
+        // 데이터베이스에서 티켓 카테고리에 따른 남은 티켓 수를 가져오는 로직 구현
+        // 예시: 남은 티켓 수가 ticket_category 테이블의 특정 컬럼에 저장되어 있다고 가정
+        return ticketRepository.findRemainingTicketsByCategoryId(ticketCategoryId);
+    }
 }

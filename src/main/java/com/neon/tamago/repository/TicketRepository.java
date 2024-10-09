@@ -14,4 +14,7 @@ import java.util.List;
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
+    // 티켓 카테고리별 남은 티켓 수 조회
+    @Query("SELECT tc.remainingQuantity FROM TicketCategory tc WHERE tc.id = :ticketCategoryId")
+    long findRemainingTicketsByCategoryId(Long ticketCategoryId);
 }
