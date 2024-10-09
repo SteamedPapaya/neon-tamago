@@ -61,7 +61,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Early Bird",
                 "Discounted tickets for early registrants",
                 BigDecimal.valueOf(50.00),
-                10000
+                100000000
         );
         try {
             ticketCategoryService.createTicketCategory(event1.getId(), category1, event1.getCreatorId());
@@ -73,7 +73,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Regular",
                 "Standard tickets",
                 BigDecimal.valueOf(100.00),
-                20000
+                200000
         );
         try {
             ticketCategoryService.createTicketCategory(event1.getId(), category2, event1.getCreatorId());
@@ -85,7 +85,7 @@ public class DataInitializer implements CommandLineRunner {
                 "VIP",
                 "VIP tickets with additional benefits",
                 BigDecimal.valueOf(200.00),
-                5000
+                50000
         );
         try {
             ticketCategoryService.createTicketCategory(event1.getId(), category3, event1.getCreatorId());
@@ -97,7 +97,7 @@ public class DataInitializer implements CommandLineRunner {
                 "Student",
                 "Discounted tickets for students",
                 BigDecimal.valueOf(30.00),
-                15000
+                150000
         );
         try {
             ticketCategoryService.createTicketCategory(event2.getId(), category4, event2.getCreatorId());
@@ -109,7 +109,7 @@ public class DataInitializer implements CommandLineRunner {
                 "General Admission",
                 "General admission tickets",
                 BigDecimal.valueOf(80.00),
-                30000
+                300000
         );
         try {
             ticketCategoryService.createTicketCategory(event2.getId(), category5, event2.getCreatorId());
