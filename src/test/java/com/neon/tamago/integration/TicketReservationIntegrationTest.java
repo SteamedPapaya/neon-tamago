@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
-public class TicketReservationIntegrationTest {
+public class TicketReservationIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private TicketRepository ticketRepository;
